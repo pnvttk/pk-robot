@@ -2,10 +2,13 @@
 #include <Keypad.h>
 #include <Wire.h>
 
-#define I2CADDR 0x21  // กำหนด Address ของ I2C
+// กำหนด Address ของ I2C
+#define I2CADDR 0x21
 
-const byte ROWS = 4;  // กำหนดจำนวนของ Rows
-const byte COLS = 4;  // กำหนดจำนวนของ Columns
+// กำหนดจำนวนของ Rows
+const byte ROWS = 4;
+// กำหนดจำนวนของ Columns
+const byte COLS = 4;
 
 // กำหนด Key ที่ใช้งาน (4x4)
 char keys[ROWS][COLS] = {
@@ -19,13 +22,15 @@ char keys[ROWS][COLS] = {
 byte rowPins[ROWS] = { 0, 1, 2, 3 };  // เชื่อมต่อกับ Pin แถวของปุ่มกด
 byte colPins[COLS] = { 4, 5, 6, 7 };  // เชื่อมต่อกับ Pin คอลัมน์ของปุ่มกด
 
-// makeKeymap(keys) : กำหนด Keymap
-// rowPins : กำหนด Pin แถวของปุ่มกด
-// colPins : กำหนด Pin คอลัมน์ของปุ่มกด
-// ROWS : กำหนดจำนวนของ Rows
-// COLS : กำหนดจำนวนของ Columns
-// I2CADDR : กำหนด Address ขอ i2C
-// PCF8574 : กำหนดเบอร์ IC
+/**
+ makeKeymap(keys) : กำหนด Keymap
+ rowPins : กำหนด Pin แถวของปุ่มกด
+ colPins : กำหนด Pin คอลัมน์ของปุ่มกด
+ ROWS : กำหนดจำนวนของ Rows
+ COLS : กำหนดจำนวนของ Columns
+ I2CADDR : กำหนด Address ขอ i2C
+ PCF8574 : กำหนดเบอร์ IC
+*/
 Keypad_I2C keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS, I2CADDR, PCF8574);
 
 // led
@@ -38,13 +43,11 @@ int buzzer = 11;
 const int ir_l = 8;  //left Sensor
 const int ir_r = 9;  //Right sensor
 
-// motor one
 //Right motor
 const int enA = 2;  // PWM2
 const int MotorAip1 = 3;
 const int MotorAip2 = 4;
 
-// motor two
 //Left motor
 const int MotorBip1 = 5;
 const int MotorBip2 = 6;
@@ -53,13 +56,13 @@ const int enB = 7;  // PWM1
 // motor speed
 int SPEED = 255;
 
-// counter when crossroad
+// counter when detect horizontal line
 int counter = 0;
 
 // check status
-bool c_status = false;
+bool c_status = true;
 
-// // set millis
+// set millis
 unsigned long startMillis;
 unsigned long currentMillis;
 unsigned long period;
@@ -68,6 +71,7 @@ void setup() {
 
   // เรียกการเชื่อมต่อ Wire
   Wire.begin();
+
   // เรียกกาเชื่อมต่อ
   keypad.begin(makeKeymap(keys));
 
@@ -78,6 +82,7 @@ void setup() {
   pinMode(led, OUTPUT);
   digitalWrite(led, LOW);
 
+  // buzzer
   pinMode(buzzer, OUTPUT);
 
   // IR sensor
@@ -98,11 +103,12 @@ void setup() {
 
   // startMillis = millis();
 }
+
+// boolean for ir turn left, right until get back into line
 bool folline_l = true;
 bool folline_r = true;
 bool wasTurnleft = false;
 bool wasTurnRight = false;
-
 
 void loop() {
 
@@ -110,16 +116,23 @@ void loop() {
   char key = keypad.getKey();
 
   switch (key) {  //  และเลือก Relay ที่ต้องการควบคุม
+
     case 'A':
 
       Serial.println("Destination : A");
+      c_status == false;
 
       while (c_status == false) {
 
         // while detect black line
-        // Serial.println("Starting Driving");
-        DriveMotor();
+        // ! test
+        // DriveMotor();
 
+        if (counter == 0 || 2 || 4 || 6) {
+          DriveMotor();
+        }
+
+        // crossing the line two way trip
         if (counter == 1 || counter == 5) {
 
           // check
@@ -132,17 +145,13 @@ void loop() {
           delay(700);
           Serial.println("Delay 2 sec");
 
-          // Starting moving again
-          // Serial.println("Turn on IR");
-          // DriveMotor();
           counter = counter + 1;
-          // exit(0);
-        }
-        if(counter == 2 || 4 || 6){
-          // Serial.println("Even counter");
-          DriveMotor();
         }
 
+        /*
+         destination point
+         delivery package then get back to start
+        */
         if (counter == 3) {
 
           // check
@@ -165,61 +174,32 @@ void loop() {
           // //// servo -------------------
           Serial.println("forward");
           Moveforward();
-          delay(500);
-          // //// servo -------------------
+          delay(700);
 
+          Serial.println("Stop prepare to turn servo");
+          Stopmoving_without_c();
+          delay(2000);
+
+          Serial.println("Backward");
+          Movebackward();
+          delay(700);
+          // //// servo -------------------
 
           Serial.println("Turn left 3 sec");
           Turnleft();
           delay(3000);
-          // folline_l = false;
+          folline_l = false;
 
           Serial.println("forward");
           Moveforward();
           delay(600);
 
-          // Serial.println("stop");
-          // Stopmoving_without_c();
-          // c_status = true;
-
-          /**
-          ** TEST
-          */
-          // ! use for stop testing
-          // Serial.println("stop");
-          // Stopmoving();
-          // c_status = true;
-          // ! use for stop testing
-
-          /**
-          ** error
-          */
-          // // Starting moving again
-          // Serial.println("Turn on IR");
-          // DriveMotor();
-
           counter = counter + 1;
-          // exit(0);
         }
 
-        // if (counter == 5) {
-        //   // check
-        //   Serial.println("Counter = ");
-        //   Serial.println(counter);
-
-        //   // Cross the line
-        //   // Serial.println("Crossing the line");
-        //   Moveforward();
-        //   delay(600);
-
-        //   // Starting moving again
-        //   // Serial.println("Turn on IR");
-        //   // DriveMotor();
-        //   counter = counter + 1;
-        //   exit(0);
-        //   }
-
+        // rotate to set start
         if (counter == 7) {
+
           // check
           Serial.println("Counter = ");
           Serial.println(counter);
@@ -227,7 +207,7 @@ void loop() {
           // 360 turn for set to start
           Turnleft();
           Serial.println("Turn 360");
-          delay(6000);
+          delay(5600);
 
           //  stop moving
           Serial.println("stop");
@@ -239,13 +219,14 @@ void loop() {
         }
       }
 
-      Serial.println("Break");
+      Serial.println("Finish Case A");
       break;
 
     // ======================================================================================================
     case 'B':
 
       Serial.println("Destination : B");
+      c_status == false;
 
       while (c_status == false) {
 
@@ -369,62 +350,75 @@ void loop() {
 
 void DriveMotor() {
 
-  // Moveforward
-  // if ir are light
-  if (digitalRead(ir_l) == HIGH && digitalRead(ir_r) == HIGH) {
-
-    // follow line left = false
-    // Turn left
-    // if (folline_l == false) {
-    //   Turnleft();
-    //   wasTurnleft = true;
-    // }
-
-    // follow line right = false
-    // Turn right
-    // else if (folline_r == false) {
-    //   Turnright();
-    //   wasTurnRight = true;
-    // }
-
-    // if not move forward
-    // else {
-    // Serial.println("Moveforward");
-    Moveforward();
-    // }
+  /*
+  // stop moving
+  // ir light are off
+  */
+  if (digitalRead(ir_l) == LOW && digitalRead(ir_r) == LOW) {
+    Serial.println("Stop");
+    Stopmoving();
   }
 
-  // Turn left
-  // ir left is off
+  /*
+  // Moveforward
+  // if ir are light
+  */
+  if (digitalRead(ir_l) == HIGH && digitalRead(ir_r) == HIGH) {
+
+    /*
+    follow line left = false
+    Turn left
+    */
+    if (folline_l == false) {
+      Turnleft();
+      wasTurnleft = true;
+    }
+    /*
+    follow line right = false
+    Turn right
+    */
+    else if (folline_r == false) {
+      Turnright();
+      wasTurnRight = true;
+    }
+    /*
+    if not move forward
+    */
+    else {
+      // ? check
+      // Serial.println("Moveforward");
+      Moveforward();
+    }
+  }
+
+  /*
+  Turn left
+  ir left is off
+  */
   if (digitalRead(ir_l) == LOW && digitalRead(ir_r) == HIGH) {
     Serial.println("Turnleft");
     Turnleft();
 
-    // reset follow right line
-    // if (wasTurnRight == true) {
-    //   wasTurnRight = false;
-    //   folline_r = true;
-    // }
+    // ? reset follow right line
+    if (wasTurnRight == true) {
+      wasTurnRight = false;
+      folline_r = true;
+    }
   }
 
-  //  Turn right
-  // ir right is off
+  /*
+  Turn right
+  ir right is off
+  */
   if (digitalRead(ir_l) == HIGH && digitalRead(ir_r) == LOW) {
     Serial.println("Turnright");
     Turnright();
 
-    // reset follow right line
-    // if (wasTurnleft == true) {
-    //   wasTurnleft = false;
-    //   folline_l = true;
-    // }
-  }
-
-  // ir light are off
-  // stop moving
-  if (digitalRead(ir_l) == LOW && digitalRead(ir_r) == LOW) {
-    Serial.println("Stop");
-    Stopmoving();
+    // ? reset follow right line
+    if (wasTurnleft == true) {
+      wasTurnleft = false;
+      folline_l = true;
+    }
   }
 
   // check msg when finish
@@ -481,19 +475,7 @@ void Turnleft() {
   delay(100);
 }
 
-// ! TEST FUNCTION
-void Turnleft3s() {
-  // Tilt robot towards left by stopping the left wheel and moving the right one
-  digitalWrite(MotorAip1, LOW);
-  digitalWrite(MotorAip2, HIGH);
-  digitalWrite(MotorBip1, HIGH);
-  digitalWrite(MotorBip2, LOW);
-  analogWrite(enA, SPEED);
-  analogWrite(enB, SPEED);
-  delay(3000);
-  exit(0);
-}
-
+// stop moving without increase counter
 void Stopmoving_without_c() {
   //Stop both Motors
   digitalWrite(MotorAip1, LOW);
@@ -504,11 +486,9 @@ void Stopmoving_without_c() {
   analogWrite(enB, 0);
   digitalWrite(led, HIGH);
 }
-void Stopmoving() {
 
-  Serial.print("STOP FUNC ------");
-  Serial.println("delay 1 sec");
-  delay(1000);
+// normal stop with increase counter
+void Stopmoving() {
 
   //Stop both Motors
   digitalWrite(MotorAip1, LOW);
@@ -518,7 +498,10 @@ void Stopmoving() {
   analogWrite(enA, 0);
   analogWrite(enB, 0);
 
-  // increse counter
+  // increase counter
+  Serial.print("STOP FUNC ------");
+  Serial.println("delay 1 sec");
+  delay(400);
   counter = counter + 1;
 
   // turn on led
@@ -532,15 +515,15 @@ void Stopmoving() {
 
   Serial.print("Counter = ");
   Serial.println(counter);
-
-  // when counter = 5
-  // led off
-  // finish status == true turn off switch case
+  /*
+  when counter = 5
+  led off
+  finish status == true turn off switch case
+  */
   if (counter == 8) {
     c_status = true;
     digitalWrite(led, LOW);
   }
-  
 
   return counter;
 }
