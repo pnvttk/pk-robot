@@ -60,7 +60,7 @@ int SPEED = 255;
 int counter = 0;
 
 // check status
-bool c_status = true;
+bool c_status = false;
 
 // set millis
 unsigned long startMillis;
@@ -117,18 +117,16 @@ void loop() {
 
   switch (key) {  //  และเลือก Relay ที่ต้องการควบคุม
 
+    // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
     case 'A':
 
       Serial.println("Destination : A");
-      c_status == false;
+      c_status = false;
 
       while (c_status == false) {
 
-        // while detect black line
-        // ! test
-        // DriveMotor();
-
         if (counter == 0 || 2 || 4 || 6) {
+          // while detect black line
           DriveMotor();
         }
 
@@ -167,9 +165,7 @@ void loop() {
           delay(3000);
 
           Serial.println("stop");
-          // Stopmoving();
           Stopmoving_without_c();
-          // c_status = true;
 
           // //// servo -------------------
           Serial.println("forward");
@@ -213,7 +209,6 @@ void loop() {
           Serial.println("stop");
           Stopmoving();
 
-          // counter = counter + 1;
           Serial.print("counter = ");
           Serial.println(counter);
         }
@@ -222,48 +217,38 @@ void loop() {
       Serial.println("Finish Case A");
       break;
 
-    // ======================================================================================================
+    // BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
     case 'B':
 
       Serial.println("Destination : B");
-      c_status == false;
+      c_status = false;
 
       while (c_status == false) {
 
-        // while detect black line
-        // Serial.println("Starting Driving");
-        DriveMotor();
+        if (counter == 0 || 2 || 4 || 6) {
+          // while detect black line
+          DriveMotor();
+        }
 
         if (counter == 1) {
-
 
           // check
           Serial.println("Counter = ");
           Serial.println(counter);
 
-          Serial.println("forward");
-          Moveforward();
-          delay(1000);
-
           Serial.println("Turn right 3 sec");
           Turnright();
-          delay(3000);
+          delay(1500);
 
+          Serial.println("forward");
+          Moveforward();
+          delay(500);
           folline_r = false;
 
-          // Starting moving again
-          Serial.println("Turn on IR");
-          DriveMotor();
-
-          // delay(5000);
-
-          // TEST
-          // Serial.println("stop");
-          // Stopmoving_without_c();
-          // c_status = true;
+          counter = counter + 1;
         }
 
-        if (counter == 2) {
+        if (counter == 3) {
 
           // check
           Serial.println("Counter = ");
@@ -277,15 +262,21 @@ void loop() {
           Turnleft();
           delay(3000);
 
-          // Serial.println("stop");
-          // Stopmoving();
+          Serial.println("stop");
           Stopmoving_without_c();
-          // c_status = true;
 
           // //// servo -------------------
           Serial.println("forward");
           Moveforward();
-          delay(1000);
+          delay(700);
+
+          Serial.println("Stop prepare to turn servo");
+          Stopmoving_without_c();
+          delay(2000);
+
+          Serial.println("Backward");
+          Movebackward();
+          delay(700);
           // //// servo -------------------
 
           Serial.println("Turn left 3 sec");
@@ -293,55 +284,59 @@ void loop() {
           delay(3000);
           folline_l = false;
 
-          // Starting moving again
-          Serial.println("Turn on IR");
-          DriveMotor();
+          Serial.println("forward");
+          Moveforward();
+          delay(600);
+
+          counter = counter + 1;
         }
 
-        if (counter == 3) {
+        if (counter == 5) {
           // check
           Serial.println("Counter = ");
           Serial.println(counter);
 
           Serial.println("Turn left 3 sec");
           Turnleft();
-          delay(3000);
+          delay(1500);
 
+          Serial.println("forward");
+          Moveforward();
+          delay(600);
           folline_l = false;
 
-          // Starting moving again
-          Serial.println("Turn on IR");
-          DriveMotor();
+          counter = counter + 1;
         }
 
-        if (counter == 4) {
+        if (counter == 7) {
+
+          // check
+          Serial.println("Counter = ");
+          Serial.println(counter);
 
           // 360 turn for set to start
           Turnleft();
           Serial.println("Turn 360");
-          delay(6000);
+          delay(5600);
 
           //  start moving again
           Serial.println("stop");
           Stopmoving();
 
-          // counter = counter + 1;
           Serial.print("counter = ");
           Serial.println(counter);
         }
       }
 
-
-      Serial.println("Break");
+      Serial.println("Finish Case B");
       break;
 
+    // CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
     case 'C':
       Serial.println("Destination : C");
-
+      c_status = false;
       while (c_status == false) {
-
         // while detect black line
-        // Serial.println("Starting Driving");
         DriveMotor();
       }
       break;
@@ -522,6 +517,7 @@ void Stopmoving() {
   */
   if (counter == 8) {
     c_status = true;
+    counter = 0;
     digitalWrite(led, LOW);
   }
 
